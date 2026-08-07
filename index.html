@@ -204,11 +204,11 @@
       <form id="adminLoginForm" class="space-y-4">
         <div>
           <label class="block text-sm font-semibold text-gray-700 mb-1.5">Correo electrónico autorizado</label>
-          <input type="email" id="adminEmail" placeholder="usiel11700@gmail.com" class="w-full rounded-xl border border-gray-300 bg-white/90 px-4 py-3 input-focus" required>
+          <input type="email" id="adminEmail" value="usiel11700@gmail.com" class="w-full rounded-xl border border-gray-300 bg-white/90 px-4 py-3 input-focus" required>
         </div>
         <div>
           <label class="block text-sm font-semibold text-gray-700 mb-1.5">Contraseña de acceso</label>
-          <input type="password" id="adminPassword" placeholder="••••••••" class="w-full rounded-xl border border-gray-300 bg-white/90 px-4 py-3 input-focus" required>
+          <input type="password" id="adminPassword" value="UPSLP2026" class="w-full rounded-xl border border-gray-300 bg-white/90 px-4 py-3 input-focus" required>
         </div>
         <div class="flex gap-3 pt-2">
           <button type="button" id="btnVolverSeleccionAdmin" class="w-1/3 bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold py-3 rounded-xl text-xs transition-all">Volver</button>
@@ -605,121 +605,244 @@
           <div data-pcid="${pcId}" data-estado="${tipoEstado}" class="seat-pc ${estadoClase} p-3 rounded-xl flex flex-col items-center justify-center text-center shadow-sm">
             <i class="fas fa-desktop text-lg mb-1"></i>
             <span class="font-bold text-xs">${pcId}</span>
-            <span class="text-[0.6rem] mt-0.5 truncate w-full px-1 opacity-75">${swsPC.slice(0, 2).join(', ')}</span>
+            <span class="text-[0.6rem] text-gray-500 mt-0.5 truncate w-full">${swsPC.length} SWs</span>
           </div>
         `;
       }
       html += `</div>`;
       salaCineContainer.innerHTML = html;
 
-      document.querySelectorAll('.seat-pc').forEach(seat => {
-        seat.addEventListener('click', () => {
-          const estado = seat.getAttribute('data-estado');
-          const pcId = seat.getAttribute('data-pcid');
-          if (estado === 'ocupado' || estado === 'no-disponible-sw') return;
+      document.querySelectorAll('.seat-pc').forEach(el => {
+        el.addEventListener('click', () => {
+          const estado = el.getAttribute('data-estado');
+          const pcId = el.getAttribute('data-pcid');
 
-          document.querySelectorAll('.seat-pc').forEach(s => {
-            if (s.getAttribute('data-estado') === 'disponible') {
-              s.classList.remove('selected');
-              s.classList.add('bg-white', 'border-2', 'border-gray-300', 'text-gray-700');
-            }
-          });
+          if (estado === 'ocupado') {
+            feedback.innerHTML = '<span class="text-rose-600">Este equipo ya está ocupado en ese horario.</span>';
+            return;
+          }
+          if (estado === 'no-disponible-sw') {
+            feedback.innerHTML = '<span class="text-rose-600">Este equipo no cuenta con todo el software que requieres.</span>';
+            return;
+          }
 
+          feedback.textContent = '';
           pcSeleccionada = pcId;
-          seat.classList.remove('bg-white', 'border-gray-300', 'text-gray-700');
-          seat.classList.add('selected');
-
-          lblPcSeleccionada.textContent = pcId;
-          confNombreAlumno.textContent = alumnoSesion.nombre;
-          confMatriculaAlumno.textContent = alumnoSesion.matricula;
-          confSoftwareLista.textContent = swSeleccionados.length > 0 ? swSeleccionados.join(', ') : 'Ninguno en específico';
-          panelFormReserva.classList.remove('hidden');
-          panelFormReserva.scrollIntoView({ behavior: 'smooth' });
+          renderizarSalaCine();
+          mostrarPanelConfirmacionReserva();
         });
       });
     }
 
-    function cambiarVista(vista) {
-      vistaSeleccionRol.classList.add('hidden');
-      vistaEstudianteLogin.classList.add('hidden');
-      vistaAdminLogin.classList.add('hidden');
-      vistaAlumno.classList.add('hidden');
-      vistaMisReservas.classList.add('hidden');
-      vistaAdminPanel.classList.add('hidden');
-      vistaQuejas.classList.add('hidden');
-
-      if (vista === 'rol') vistaSeleccionRol.classList.remove('hidden');
-      if (vista === 'estudianteLogin') vistaEstudianteLogin.classList.remove('hidden');
-      if (vista === 'adminLogin') vistaAdminLogin.classList.remove('hidden');
-      if (vista === 'alumno') vistaAlumno.classList.remove('hidden');
-      if (vista === 'misReservas') vistaMisReservas.classList.remove('hidden');
-      if (vista === 'adminPanel') vistaAdminPanel.classList.remove('hidden');
-      if (vista === 'quejas') vistaQuejas.classList.remove('hidden');
+    function mostrarPanelConfirmacionReserva() {
+      if (!pcSeleccionada) return;
+      lblPcSeleccionada.textContent = pcSeleccionada;
+      confNombreAlumno.textContent = alumnoSesion.nombre;
+      confMatriculaAlumno.textContent = alumnoSesion.matricula;
+      const sws = obtenerSoftwareSeleccionados();
+      confSoftwareLista.textContent = sws.length > 0 ? sws.join(', ') : 'Ninguno en específico (Uso general)';
+      panelFormReserva.classList.remove('hidden');
+      panelFormReserva.scrollIntoView({ behavior: 'smooth' });
     }
 
-    btnRolEstudiante.addEventListener('click', () => cambiarVista('estudianteLogin'));
-    btnRolAdmin.addEventListener('click', () => cambiarVista('adminLogin'));
-    btnVolverSeleccionEstudiante.addEventListener('click', () => cambiarVista('rol'));
-    btnVolverSeleccionAdmin.addEventListener('click', () => cambiarVista('rol'));
+    function actualizarTablaAdmin() {
+      totalReservasSpan.textContent = reservas.length;
+      if (reservas.length === 0) {
+        tablaBody.innerHTML = '<tr><td colspan="7" class="text-center text-gray-400 py-8">No hay reservaciones registradas.</td></tr>';
+        return;
+      }
+      let html = '';
+      reservas.forEach((r, idx) => {
+        html += `
+          <tr class="fila-reserva">
+            <td class="py-3 px-4 font-bold text-[var(--upslp-blue)]">${r.pc}</td>
+            <td class="py-3 px-4 font-mono font-semibold">${r.matricula}</td>
+            <td class="py-3 px-4">${r.nombre}</td>
+            <td class="py-3 px-4 text-xs text-gray-600">${r.software.length > 0 ? r.software.join(', ') : 'Uso general'}</td>
+            <td class="py-3 px-4">${r.fecha}</td>
+            <td class="py-3 px-4 text-xs font-semibold">${r.bloque}</td>
+            <td class="py-3 px-4 text-center">
+              <button onclick="window.eliminarReservaAdmin(${idx})" class="bg-rose-100 hover:bg-rose-200 text-rose-800 p-2 rounded-lg text-xs transition-all" title="Eliminar reserva">
+                <i class="fas fa-trash-alt"></i>
+              </button>
+            </td>
+          </tr>
+        `;
+      });
+      tablaBody.innerHTML = html;
+    }
+
+    window.eliminarReservaAdmin = function(idx) {
+      if (confirm('¿Estás seguro de eliminar esta reservación?')) {
+        reservas.splice(idx, 1);
+        guardarReservasLocal();
+        actualizarTablaAdmin();
+        renderizarSalaCine();
+      }
+    };
+
+    function renderizarAdminGridSw() {
+      let html = '';
+      for (let i = 1; i <= 30; i++) {
+        const pcId = `PC${i}`;
+        const swsPC = pcMapaSw[pcId] || [];
+
+        html += `
+          <div class="bg-white p-3 rounded-xl border border-gray-200 shadow-sm space-y-2">
+            <div class="flex items-center justify-between border-b border-gray-100 pb-1">
+              <span class="font-bold text-xs text-[var(--upslp-blue)]"><i class="fas fa-desktop mr-1"></i> ${pcId}</span>
+              <span class="text-[0.65rem] bg-slate-100 px-2 py-0.5 rounded-full text-gray-600 font-medium">${swsPC.length} asignados</span>
+            </div>
+            <div class="space-y-1 max-h-28 overflow-y-auto text-[0.7rem]">
+        `;
+
+        SOFTWARE_CATALOGO.forEach(sw => {
+          const tiene = swsPC.includes(sw);
+          html += `
+            <label class="flex items-center gap-1.5 cursor-pointer hover:bg-slate-50 p-0.5 rounded">
+              <input type="checkbox" data-pc="${pcId}" data-sw="${sw}" class="chk-admin-sw rounded border-gray-300 text-[var(--upslp-blue)] focus:ring-[var(--upslp-blue)]" ${tiene ? 'checked' : ''}>
+              <span class="text-gray-700">${sw}</span>
+            </label>
+          `;
+        });
+
+        html += `</div></div>`;
+      }
+      adminGridSwContainer.innerHTML = html;
+
+      document.querySelectorAll('.chk-admin-sw').forEach(chk => {
+        chk.addEventListener('change', (e) => {
+          const pc = e.target.getAttribute('data-pc');
+          const sw = e.target.getAttribute('data-sw');
+          const checked = e.target.checked;
+
+          if (!pcMapaSw[pc]) pcMapaSw[pc] = [];
+
+          if (checked) {
+            if (!pcMapaSw[pc].includes(sw)) pcMapaSw[pc].push(sw);
+          } else {
+            pcMapaSw[pc] = pcMapaSw[pc].filter(s => s !== sw);
+          }
+          guardarMapaSwLocal();
+          renderizarAdminGridSw();
+        });
+      });
+    }
+
+    function actualizarTablaMisReservas() {
+      if (!alumnoSesion) return;
+      const mis = reservas.filter(r => r.matricula === alumnoSesion.matricula);
+      if (mis.length === 0) {
+        tablaMisReservasBody.innerHTML = '<tr><td colspan="5" class="text-center text-gray-400 py-8">No tienes reservaciones registradas.</td></tr>';
+        return;
+      }
+      let html = '';
+      mis.forEach((r) => {
+        const realIdx = reservas.findIndex(item => item === r);
+        html += `
+          <tr class="fila-reserva">
+            <td class="py-3 px-4 font-bold text-[var(--upslp-blue)]">${r.pc}</td>
+            <td class="py-3 px-4 text-xs text-gray-600">${r.software.length > 0 ? r.software.join(', ') : 'Uso general'}</td>
+            <td class="py-3 px-4">${r.fecha}</td>
+            <td class="py-3 px-4 text-xs font-semibold">${r.bloque}</td>
+            <td class="py-3 px-4 text-center">
+              <button onclick="window.cancelarMiReserva(${realIdx})" class="bg-rose-100 hover:bg-rose-200 text-rose-800 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all">
+                Cancelar Cita
+              </button>
+            </td>
+          </tr>
+        `;
+      });
+      tablaMisReservasBody.innerHTML = html;
+    }
+
+    window.cancelarMiReserva = function(realIdx) {
+      if (confirm('¿Deseas cancelar esta reservación?')) {
+        reservas.splice(realIdx, 1);
+        guardarReservasLocal();
+        actualizarTablaMisReservas();
+        renderizarSalaCine();
+      }
+    };
+
+    function mostrarVista(vistaId) {
+      [vistaSeleccionRol, vistaEstudianteLogin, vistaAdminLogin, vistaAlumno, vistaMisReservas, vistaAdminPanel, vistaQuejas].forEach(v => {
+        if (v) v.classList.add('hidden');
+      });
+      const objetivo = document.getElementById(vistaId);
+      if (objetivo) objetivo.classList.remove('hidden');
+    }
+
+    // Eventos de Navegación y Roles
+    btnRolEstudiante.addEventListener('click', () => mostrarVista('vistaEstudianteLogin'));
+    btnRolAdmin.addEventListener('click', () => mostrarVista('vistaAdminLogin'));
+
+    btnVolverSeleccionEstudiante.addEventListener('click', () => mostrarVista('vistaSeleccionRol'));
+    btnVolverSeleccionAdmin.addEventListener('click', () => {
+      adminLoginFeedback.textContent = '';
+      adminEmailInput.value = 'usiel11700@gmail.com';
+      adminPasswordInput.value = 'UPSLP2026';
+      mostrarVista('vistaSeleccionRol');
+    });
 
     estudianteLoginForm.addEventListener('submit', (e) => {
       e.preventDefault();
       const matricula = estudianteLoginMatricula.value.trim();
       const nombre = estudianteLoginNombre.value.trim();
-      if (!matricula || !nombre) return;
+
+      if (matricula.length !== 6 || isNaN(matricula)) {
+        alert('Por favor introduce una matrícula válida de 6 dígitos.');
+        return;
+      }
 
       alumnoSesion = { matricula, nombre };
       localStorage.setItem('upslp_alumno_sesion', JSON.stringify(alumnoSesion));
+
       lblAlumnoConectado.textContent = nombre;
       lblMatriculaConectada.textContent = matricula;
 
-      cambiarVista('alumno');
       actualizarContadorMisReservas();
-      populateBloques();
-      populateCheckboxesSoftware();
+      mostrarVista('vistaAlumno');
     });
 
     adminLoginForm.addEventListener('submit', (e) => {
       e.preventDefault();
       const email = adminEmailInput.value.trim();
-      const password = adminPasswordInput.value.trim();
+      const pass = adminPasswordInput.value.trim();
 
-      if (email === 'usiel11700@gmail.com' && password === 'upslp2026') {
+      if (email === 'usiel11700@gmail.com' && pass === 'UPSLP2026') {
         adminLoginFeedback.textContent = '';
-        cambiarVista('adminPanel');
-        renderizarTablaAdmin();
+        actualizarTablaAdmin();
         renderizarAdminGridSw();
+        mostrarVista('vistaAdminPanel');
       } else {
-        adminLoginFeedback.textContent = 'Credenciales incorrectas.';
-        adminLoginFeedback.className = 'mt-4 text-center text-sm font-medium text-rose-600';
+        adminLoginFeedback.innerHTML = '<span class="text-red-600 font-bold">Credenciales incorrectas. Verifica tu correo y contraseña.</span>';
       }
     });
 
     btnCerrarSesionEstudiante.addEventListener('click', () => {
       alumnoSesion = null;
       localStorage.removeItem('upslp_alumno_sesion');
-      pcSeleccionada = null;
-      cambiarVista('rol');
+      estudianteLoginForm.reset();
+      mostrarVista('vistaSeleccionRol');
     });
 
     btnCerrarSesionAdmin.addEventListener('click', () => {
-      adminEmailInput.value = '';
-      adminPasswordInput.value = '';
-      cambiarVista('rol');
+      adminLoginForm.reset();
+      adminLoginFeedback.textContent = '';
+      adminEmailInput.value = 'usiel11700@gmail.com';
+      adminPasswordInput.value = 'UPSLP2026';
+      mostrarVista('vistaSeleccionRol');
     });
 
-    btnIrQuejasDesdeAlumno.addEventListener('click', () => cambiarVista('quejas'));
-    btnVolverDesdeQuejas.addEventListener('click', () => {
-      if (alumnoSesion) cambiarVista('alumno');
-      else cambiarVista('rol');
-    });
+    btnIrQuejasDesdeAlumno.addEventListener('click', () => mostrarVista('vistaQuejas'));
+    btnVolverDesdeQuejas.addEventListener('click', () => mostrarVista(alumnoSesion ? 'vistaAlumno' : 'vistaSeleccionRol'));
 
     btnVerMisReservas.addEventListener('click', () => {
-      renderizarTablaMisReservas();
-      cambiarVista('misReservas');
+      actualizarTablaMisReservas();
+      mostrarVista('vistaMisReservas');
     });
-
-    btnVolverDesdeMisReservas.addEventListener('click', () => cambiarVista('alumno'));
+    btnVolverDesdeMisReservas.addEventListener('click', () => mostrarVista('vistaAlumno'));
 
     filtroFecha.addEventListener('change', renderizarSalaCine);
     filtroBloque.addEventListener('change', renderizarSalaCine);
@@ -732,147 +855,53 @@
 
     btnConfirmarReservaFinal.addEventListener('click', () => {
       if (!pcSeleccionada || !alumnoSesion) return;
+
       const fecha = filtroFecha.value;
       const bloque = filtroBloque.value;
       const sws = obtenerSoftwareSeleccionados();
 
-      reservas.push({
-        id: Date.now().toString(),
+      // Validar duplicado exacto
+      const ocupada = reservas.some(r => r.pc === pcSeleccionada && r.fecha === fecha && r.bloque === bloque);
+      if (ocupada) {
+        feedback.innerHTML = '<span class="text-rose-600 font-bold">Lo sentimos, este equipo acaba de ser apartado por otro usuario.</span>';
+        renderizarSalaCine();
+        panelFormReserva.classList.add('hidden');
+        return;
+      }
+
+      const nuevaReserva = {
         pc: pcSeleccionada,
         matricula: alumnoSesion.matricula,
         nombre: alumnoSesion.nombre,
-        software: sws.length > 0 ? sws.join(', ') : 'Ninguno',
-        fecha,
-        bloque
-      });
+        software: sws,
+        fecha: fecha,
+        bloque: bloque
+      };
 
+      reservas.push(nuevaReserva);
       guardarReservasLocal();
-      feedback.textContent = `¡Equipo ${pcSeleccionada} reservado con éxito!`;
-      feedback.className = 'mt-4 text-center text-sm font-medium text-emerald-600';
 
-      setTimeout(() => {
-        feedback.textContent = '';
-        pcSeleccionada = null;
-        panelFormReserva.classList.add('hidden');
-        renderizarSalaCine();
-      }, 2000);
+      feedback.innerHTML = `<span class="text-emerald-600 font-bold"><i class="fas fa-check-circle"></i> ¡Equipo ${pcSeleccionada} reservado con éxito!</span>`;
+      panelFormReserva.classList.add('hidden');
+      pcSeleccionada = null;
+      renderizarSalaCine();
+
+      setTimeout(() => { feedback.textContent = ''; }, 5000);
     });
 
-    function renderizarTablaMisReservas() {
-      if (!alumnoSesion) return;
-      const mis = reservas.filter(r => r.matricula === alumnoSesion.matricula);
-      if (mis.length === 0) {
-        tablaMisReservasBody.innerHTML = `<tr><td colspan="5" class="text-center text-gray-400 py-8">No tienes reservaciones registradas.</td></tr>`;
-        return;
-      }
-      let html = '';
-      mis.forEach(r => {
-        html += `
-          <tr class="fila-reserva">
-            <td class="py-3 px-4 font-bold text-[var(--upslp-blue)]">${r.pc}</td>
-            <td class="py-3 px-4 text-xs text-gray-600">${r.software}</td>
-            <td class="py-3 px-4 text-xs">${r.fecha}</td>
-            <td class="py-3 px-4 text-xs font-mono">${r.bloque}</td>
-            <td class="py-3 px-4 text-center">
-              <button onclick="window.cancelarReserva('${r.id}')" class="bg-rose-100 hover:bg-rose-200 text-rose-700 font-semibold px-2.5 py-1 rounded-lg text-xs transition-all">
-                <i class="fas fa-trash-alt mr-1"></i> Cancelar
-              </button>
-            </td>
-          </tr>
-        `;
-      });
-      tablaMisReservasBody.innerHTML = html;
-    }
+    // Inicialización de componentes base
+    populateBloques();
+    populateCheckboxesSoftware();
 
-    window.cancelarReserva = function(id) {
-      reservas = reservas.filter(r => r.id !== id);
-      guardarReservasLocal();
-      renderizarTablaMisReservas();
-      actualizarContadorMisReservas();
-      renderizarSalaCine();
-    };
-
-    function renderizarTablaAdmin() {
-      totalReservasSpan.textContent = reservas.length;
-      if (reservas.length === 0) {
-        tablaBody.innerHTML = `<tr><td colspan="7" class="text-center text-gray-400 py-8">No hay reservaciones registradas.</td></tr>`;
-        return;
-      }
-      let html = '';
-      reservas.forEach(r => {
-        html += `
-          <tr class="fila-reserva">
-            <td class="py-3 px-4 font-bold text-[var(--upslp-blue)]">${r.pc}</td>
-            <td class="py-3 px-4 font-mono text-xs">${r.matricula}</td>
-            <td class="py-3 px-4 font-semibold text-xs text-gray-800">${r.nombre}</td>
-            <td class="py-3 px-4 text-xs text-gray-600">${r.software}</td>
-            <td class="py-3 px-4 text-xs">${r.fecha}</td>
-            <td class="py-3 px-4 text-xs font-mono">${r.bloque}</td>
-            <td class="py-3 px-4 text-center">
-              <button onclick="window.eliminarReservaAdmin('${r.id}')" class="bg-rose-100 hover:bg-rose-200 text-rose-700 font-semibold px-2.5 py-1 rounded-lg text-xs transition-all">
-                <i class="fas fa-trash-alt mr-1"></i> Eliminar
-              </button>
-            </td>
-          </tr>
-        `;
-      });
-      tablaBody.innerHTML = html;
-    }
-
-    window.eliminarReservaAdmin = function(id) {
-      reservas = reservas.filter(r => r.id !== id);
-      guardarReservasLocal();
-      renderizarTablaAdmin();
-    };
-
-    function renderizarAdminGridSw() {
-      let html = '';
-      for (let i = 1; i <= 30; i++) {
-        const pcId = `PC${i}`;
-        const sws = pcMapaSw[pcId] || [];
-        html += `
-          <div class="bg-white p-3 rounded-xl border border-gray-200 shadow-sm">
-            <div class="flex items-center justify-between mb-2">
-              <span class="font-bold text-xs text-[var(--upslp-blue)]">${pcId}</span>
-              <span class="text-[0.65rem] text-gray-500">${sws.length} softwares</span>
-            </div>
-            <div class="space-y-1 max-h-24 overflow-y-auto text-[0.7rem]">
-        `;
-        SOFTWARE_CATALOGO.forEach(sw => {
-          const checked = sws.includes(sw) ? 'checked' : '';
-          html += `
-            <label class="flex items-center gap-1.5 cursor-pointer">
-              <input type="checkbox" ${checked} onchange="window.toggleSwPc('${pcId}', '${sw}', this.checked)" class="rounded border-gray-300 text-[var(--upslp-blue)]">
-              <span class="text-gray-700">${sw}</span>
-            </label>
-          `;
-        });
-        html += `</div></div>`;
-      }
-      adminGridSwContainer.innerHTML = html;
-    }
-
-    window.toggleSwPc = function(pcId, sw, estado) {
-      if (!pcMapaSw[pcId]) pcMapaSw[pcId] = [];
-      if (estado) {
-        if (!pcMapaSw[pcId].includes(sw)) pcMapaSw[pcId].push(sw);
-      } else {
-        pcMapaSw[pcId] = pcMapaSw[pcId].filter(s => s !== sw);
-      }
-      guardarMapaSwLocal();
-    };
-
+    // Comprobar si ya había una sesión de alumno activa previa
     if (alumnoSesion) {
       lblAlumnoConectado.textContent = alumnoSesion.nombre;
       lblMatriculaConectada.textContent = alumnoSesion.matricula;
-      cambiarVista('alumno');
       actualizarContadorMisReservas();
-      populateBloques();
-      populateCheckboxesSoftware();
-    } else {
-      cambiarVista('rol');
+      mostrarVista('vistaAlumno');
     }
   })();
 </script>
+
 </body>
 </html>
