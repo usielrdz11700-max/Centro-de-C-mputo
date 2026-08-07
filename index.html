@@ -33,7 +33,7 @@
       cursor: pointer;
       user-select: none;
     }
-    .seat-pc:hover:not(.ocupado):not(.no-disponible-sw) {
+    .seat-pc:hover:not(.ocupado) {
       transform: scale(1.08);
       box-shadow: 0 4px 12px rgba(15,44,89,0.2);
     }
@@ -50,12 +50,10 @@
       cursor: not-allowed;
       opacity: 0.6;
     }
-    .seat-pc.no-disponible-sw {
-      background-color: #fee2e2 !important;
-      color: #991b1b !important;
-      border-color: #fca5a5 !important;
-      cursor: not-allowed;
-      opacity: 0.5;
+    .seat-pc.sin-software {
+      background-color: #fef3c7 !important;
+      border-color: #f59e0b !important;
+      color: #92400e !important;
     }
     .select-clean {
       background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%230f2c59' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
@@ -95,17 +93,11 @@
       0% { opacity: 0; transform: translateY(-5px); }
       100% { opacity: 1; transform: translateY(0); }
     }
-    .loading {
-      display: inline-block;
-      width: 20px;
-      height: 20px;
-      border: 3px solid rgba(255,255,255,.3);
-      border-radius: 50%;
-      border-top-color: #fff;
-      animation: spin 1s ease-in-out infinite;
-    }
-    @keyframes spin {
-      to { transform: rotate(360deg); }
+    .badge-software {
+      font-size: 0.55rem;
+      padding: 0.1rem 0.4rem;
+      border-radius: 20px;
+      background: rgba(0,0,0,0.05);
     }
   </style>
 </head>
@@ -189,7 +181,7 @@
         </div>
         <div class="flex gap-3 pt-2">
           <button type="button" id="btnVolverSeleccionEstudiante" class="w-1/3 bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold py-3 rounded-xl text-xs transition-all">Volver</button>
-          <button type="submit" id="btnEntrarEstudiante" class="w-2/3 bg-[var(--upslp-orange)] hover:bg-[#ea580c] text-white font-semibold py-3 rounded-xl shadow-md transition-all text-xs">
+          <button type="submit" class="w-2/3 bg-[var(--upslp-orange)] hover:bg-[#ea580c] text-white font-semibold py-3 rounded-xl shadow-md transition-all text-xs">
             <i class="fas fa-sign-in-alt mr-2"></i> Entrar con Matrícula
           </button>
         </div>
@@ -218,9 +210,7 @@
         </div>
         <div class="flex gap-3 pt-2">
           <button type="button" id="btnVolverSeleccionAdmin" class="w-1/3 bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold py-3 rounded-xl text-xs transition-all">Volver</button>
-          <button type="submit" id="btnAdminLogin" class="w-2/3 bg-[var(--upslp-orange)] hover:bg-[#ea580c] text-white font-semibold py-3 rounded-xl shadow-md transition-all text-xs">
-            Entrar al Panel
-          </button>
+          <button type="submit" class="w-2/3 bg-[var(--upslp-orange)] hover:bg-[#ea580c] text-white font-semibold py-3 rounded-xl shadow-md transition-all text-xs">Entrar al Panel</button>
         </div>
       </form>
       <div id="adminLoginFeedback" class="mt-4 text-center text-sm font-medium"></div>
@@ -237,10 +227,10 @@
         </div>
         <div class="flex flex-wrap items-center gap-2">
           <button id="btnVerMisReservas" class="text-xs bg-[var(--upslp-blue)] text-white font-semibold px-3.5 py-2 rounded-xl transition-all flex items-center gap-1.5 shadow-sm">
-            <i class="fas fa-ticket-alt"></i> Mis Reservaciones Activas <span id="badgeMisReservasCount" class="bg-white text-[var(--upslp-blue)] px-1.5 py-0.2 rounded-full text-[0.65rem] font-bold">0</span>
+            <i class="fas fa-ticket-alt"></i> Mis Reservaciones <span id="badgeMisReservasCount" class="bg-white text-[var(--upslp-blue)] px-1.5 py-0.2 rounded-full text-[0.65rem] font-bold">0</span>
           </button>
           <button id="btnIrQuejasDesdeAlumno" class="text-xs bg-[var(--upslp-orange)]/10 hover:bg-[var(--upslp-orange)]/20 text-[var(--upslp-orange)] font-semibold px-3.5 py-2 rounded-xl transition-all flex items-center gap-1.5">
-            <i class="fas fa-triangle-exclamation"></i> Reportar Falla / QR Jira
+            <i class="fas fa-triangle-exclamation"></i> Reportar Falla
           </button>
           <button id="btnCerrarSesionEstudiante" class="text-xs bg-rose-100 hover:bg-rose-200 text-rose-800 font-semibold px-3.5 py-2 rounded-xl transition-all border border-rose-200">
             <i class="fas fa-sign-out-alt mr-1"></i> Cerrar Sesión
@@ -248,18 +238,18 @@
         </div>
       </div>
 
-      <!-- Filtros de Fecha, Bloque y Software -->
+      <!-- Filtros -->
       <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 bg-slate-50/90 p-5 rounded-2xl border border-[var(--upslp-blue)]/15">
         <div>
           <label class="block text-xs font-semibold text-gray-700 mb-1.5">
             <i class="fas fa-calendar-day mr-1 text-[var(--upslp-blue)]"></i> Fecha (Lunes a Sábado)
           </label>
           <input type="date" id="filtroFecha" class="w-full rounded-xl border border-gray-300 bg-white px-3 py-2.5 text-sm input-focus" required>
-          <p id="errorDiaSemana" class="text-[0.65rem] text-rose-600 mt-1 hidden font-medium"><i class="fas fa-exclamation-circle"></i> Los domingos no hay servicio. Elige de Lunes a Sábado.</p>
+          <p id="errorDiaSemana" class="text-[0.65rem] text-rose-600 mt-1 hidden font-medium"><i class="fas fa-exclamation-circle"></i> Los domingos no hay servicio.</p>
         </div>
         <div>
           <label class="block text-xs font-semibold text-gray-700 mb-1.5">
-            <i class="fas fa-clock mr-1 text-[var(--upslp-blue)]"></i> Bloque de Hora (1 Hora)
+            <i class="fas fa-clock mr-1 text-[var(--upslp-blue)]"></i> Bloque de Hora
           </label>
           <select id="filtroBloque" class="select-clean w-full rounded-xl border border-gray-300 bg-white px-3 py-2.5 text-sm input-focus">
             <option value="">-- Selecciona hora --</option>
@@ -267,7 +257,7 @@
         </div>
         <div>
           <label class="block text-xs font-semibold text-gray-700 mb-1.5">
-            <i class="fas fa-layer-group mr-1 text-[var(--upslp-blue)]"></i> Software Necesario (Puedes elegir varios)
+            <i class="fas fa-layer-group mr-1 text-[var(--upslp-blue)]"></i> Software Necesario (Opcional)
           </label>
           <div id="contenedorCheckboxesSoftware" class="bg-white border border-gray-300 rounded-xl p-2.5 max-h-32 overflow-y-auto space-y-1.5 text-xs">
             <!-- Checkboxes dinámicos -->
@@ -280,53 +270,49 @@
         <div class="flex flex-wrap justify-center gap-4 text-[0.7rem] text-gray-600 font-medium">
           <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-md bg-white border border-gray-300 inline-block"></span> Disponible</span>
           <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-md bg-[var(--upslp-orange)] inline-block"></span> Seleccionada</span>
-          <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-md bg-[#fee2e2] border border-red-300 inline-block"></span> Sin el Software Requerido</span>
+          <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-md bg-[#fef3c7] border border-yellow-400 inline-block"></span> Sin Software (se puede usar)</span>
           <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-md bg-[#cbd5e1] inline-block"></span> Ocupada</span>
         </div>
       </div>
 
-      <!-- Distribución de 30 PCs -->
+      <!-- Sala de PCs -->
       <div id="salaCineContainer" class="bg-white/60 p-6 rounded-2xl border border-[var(--upslp-blue)]/10 mb-6">
         <!-- Generado dinámicamente -->
       </div>
 
-      <!-- Panel de Confirmación de Apartado -->
+      <!-- Panel de Confirmación -->
       <div id="panelFormReserva" class="hidden bg-white border-2 border-[var(--upslp-orange)]/40 p-5 rounded-2xl shadow-sm space-y-4 mensaje-flotante">
         <div class="flex items-center justify-between border-b border-gray-100 pb-2">
           <h3 class="text-sm font-bold text-[var(--upslp-blue)] flex items-center gap-2">
-            <i class="fas fa-check-circle text-[var(--upslp-orange)]"></i> Confirmar Apartado para <span id="lblPcSeleccionada" class="text-[var(--upslp-orange)] font-mono"></span>
+            <i class="fas fa-check-circle text-[var(--upslp-orange)]"></i> Confirmar para <span id="lblPcSeleccionada" class="text-[var(--upslp-orange)] font-mono"></span>
           </h3>
-          <button type="button" id="btnCancelarSeleccionPC" class="text-xs text-gray-400 hover:text-gray-600 font-semibold"><i class="fas fa-times"></i> Cambiar equipo</button>
+          <button type="button" id="btnCancelarSeleccionPC" class="text-xs text-gray-400 hover:text-gray-600 font-semibold"><i class="fas fa-times"></i> Cambiar</button>
         </div>
-
         <div class="bg-slate-50 p-3 rounded-xl text-xs space-y-1 text-gray-700">
           <p><b>Alumno:</b> <span id="confNombreAlumno" class="font-bold text-[var(--upslp-blue)]"></span></p>
           <p><b>Matrícula:</b> <span id="confMatriculaAlumno" class="font-mono font-bold text-[var(--upslp-orange)]"></span></p>
-          <p><b>Software seleccionado:</b> <span id="confSoftwareLista" class="text-[var(--upslp-blue)] font-semibold"></span></p>
+          <p><b>Software:</b> <span id="confSoftwareLista" class="text-[var(--upslp-blue)] font-semibold"></span></p>
         </div>
-
         <button type="button" id="btnConfirmarReservaFinal" class="w-full bg-[var(--upslp-orange)] hover:bg-[#ea580c] text-white font-semibold py-3 rounded-xl flex items-center justify-center gap-2 text-xs shadow-md transition-all">
-          <i class="fas fa-bookmark"></i> Completar y Registrar Reservación
+          <i class="fas fa-bookmark"></i> Registrar Reservación
         </button>
       </div>
 
       <div id="mensajeFeedback" class="mt-4 text-center text-sm font-medium"></div>
     </div>
 
-    <!-- ========== 3.1 VISTA "MIS RESERVAS" ========== -->
+    <!-- ========== 3.1 MIS RESERVAS ========== -->
     <div id="vistaMisReservas" class="hidden max-w-3xl mx-auto py-2">
       <div class="flex items-center justify-between mb-4 border-b border-gray-200 pb-3">
         <div>
           <h2 class="text-lg font-bold text-[var(--upslp-blue)] flex items-center gap-2">
-            <i class="fas fa-ticket-alt text-[var(--upslp-orange)]"></i> Mis Reservaciones Activas
+            <i class="fas fa-ticket-alt text-[var(--upslp-orange)]"></i> Mis Reservaciones
           </h2>
-          <p class="text-xs text-gray-600">Aquí puedes consultar o cancelar los equipos que has apartado previamente.</p>
         </div>
         <button id="btnVolverDesdeMisReservas" class="text-xs bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold px-3.5 py-2 rounded-xl transition-all">
-          <i class="fas fa-arrow-left mr-1"></i> Volver a la Sala
+          <i class="fas fa-arrow-left mr-1"></i> Volver
         </button>
       </div>
-
       <div class="scroll-table border border-[var(--upslp-blue)]/20 rounded-2xl bg-white shadow-sm mb-4">
         <table class="w-full text-sm">
           <thead class="bg-slate-100 sticky top-0 z-10 text-xs uppercase tracking-wider">
@@ -335,36 +321,34 @@
               <th class="py-3 px-4">Software</th>
               <th class="py-3 px-4">Fecha</th>
               <th class="py-3 px-4">Bloque</th>
-              <th class="py-3 px-4 text-center">Acciones</th>
+              <th class="py-3 px-4 text-center">Acción</th>
             </tr>
           </thead>
           <tbody id="tablaMisReservasBody">
-            <tr><td colspan="5" class="text-center text-gray-400 py-8">No tienes reservaciones registradas.</td></tr>
+            <tr><td colspan="5" class="text-center text-gray-400 py-8">No tienes reservaciones.</td></tr>
           </tbody>
         </table>
       </div>
     </div>
 
-    <!-- ========== 4. VISTA ADMINISTRADOR ========== -->
+    <!-- ========== 4. ADMINISTRADOR ========== -->
     <div id="vistaAdminPanel" class="hidden">
       <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
         <div>
           <h2 class="text-lg font-bold text-[var(--upslp-blue)] flex items-center gap-2">
-            <i class="fas fa-shield-alt text-[var(--upslp-orange)]"></i> Panel de Administración del Centro de Cómputo
+            <i class="fas fa-shield-alt text-[var(--upslp-orange)]"></i> Panel de Administración
           </h2>
-          <p class="text-xs text-gray-600">Historial completo, alumnos por equipo y gestión de software instalado en cada PC.</p>
         </div>
         <div class="flex items-center gap-3">
           <span class="text-xs bg-white px-3.5 py-1.5 rounded-full text-gray-700 font-semibold border border-[var(--upslp-blue)]/20 shadow-sm">
-            Total reservas: <span id="totalReservasContador" class="text-[var(--upslp-blue)] font-bold">0</span>
+            Total: <span id="totalReservasContador" class="text-[var(--upslp-blue)] font-bold">0</span>
           </span>
           <button id="btnCerrarSesionAdmin" class="text-xs bg-rose-100 hover:bg-rose-200 text-rose-800 font-semibold px-3.5 py-1.5 rounded-full transition-all">
-            <i class="fas fa-sign-out-alt mr-1"></i> Cerrar sesión
+            <i class="fas fa-sign-out-alt mr-1"></i> Cerrar
           </button>
         </div>
       </div>
 
-      <!-- Tabla de Reservas Globales -->
       <div class="scroll-table border border-[var(--upslp-blue)]/20 rounded-2xl bg-white/90 shadow-sm mb-6">
         <table class="w-full text-sm">
           <thead class="bg-slate-100 sticky top-0 z-10 text-xs uppercase tracking-wider">
@@ -372,59 +356,53 @@
               <th class="py-3 px-4">Equipo</th>
               <th class="py-3 px-4">Matrícula</th>
               <th class="py-3 px-4">Alumno</th>
-              <th class="py-3 px-4">Software Usado</th>
+              <th class="py-3 px-4">Software</th>
               <th class="py-3 px-4">Fecha</th>
               <th class="py-3 px-4">Bloque</th>
-              <th class="py-3 px-4 text-center">Acciones</th>
+              <th class="py-3 px-4 text-center">Acción</th>
             </tr>
           </thead>
           <tbody id="tablaReservasBody">
-            <tr><td colspan="7" class="text-center text-gray-400 py-8">No hay reservaciones registradas.</td></tr>
+            <tr><td colspan="7" class="text-center text-gray-400 py-8">No hay reservaciones.</td></tr>
           </tbody>
         </table>
       </div>
 
-      <!-- Gestión de Software por PC -->
       <div>
         <div class="flex items-center justify-between mb-3">
           <div class="flex items-center gap-2">
             <i class="fas fa-cogs text-[var(--upslp-orange)]"></i>
-            <span class="text-sm font-bold text-gray-700">Administrar Software Instalado por Computadora (PC1 a PC30)</span>
+            <span class="text-sm font-bold text-gray-700">Software por PC</span>
           </div>
           <button id="btnRefrescarSoftware" class="text-xs bg-[var(--upslp-blue)] text-white px-3 py-1.5 rounded-xl hover:bg-[var(--upslp-blue-dark)] transition-all">
             <i class="fas fa-sync-alt mr-1"></i> Refrescar
           </button>
         </div>
         <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 max-h-96 overflow-y-auto bg-white/80 p-4 rounded-2xl border border-[var(--upslp-blue)]/10" id="adminGridSwContainer">
-          <!-- Generado dinámicamente -->
         </div>
       </div>
     </div>
 
-    <!-- ========== 5. VISTA QUEJAS / QR JIRA ========== -->
+    <!-- ========== 5. QUEJAS ========== -->
     <div id="vistaQuejas" class="hidden max-w-2xl mx-auto py-4 text-center">
       <div class="mb-4 flex items-center justify-between">
         <button id="btnVolverDesdeQuejas" class="text-xs bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold px-3 py-2 rounded-xl transition-all">
           <i class="fas fa-arrow-left mr-1"></i> Regresar
         </button>
-        <h2 class="text-lg font-bold text-[var(--upslp-blue)]">Reportes y Observaciones de Equipos</h2>
+        <h2 class="text-lg font-bold text-[var(--upslp-blue)]">Reportar Falla</h2>
         <div class="w-16"></div>
       </div>
-
       <div class="bg-white p-6 rounded-2xl border border-[var(--upslp-blue)]/25 shadow-sm space-y-4">
         <div class="w-16 h-16 bg-[var(--upslp-blue)] text-white rounded-2xl mx-auto flex items-center justify-center text-2xl shadow-md mb-2">
           <i class="fas fa-tools"></i>
         </div>
-        <p class="text-xs text-gray-600">¿Alguna PC no funciona, le falta software o presenta fallas físicas? Repórtala mediante el sistema de soporte técnico oficial.</p>
-
+        <p class="text-xs text-gray-600">Reporta fallas técnicas mediante el sistema de soporte.</p>
         <div class="inline-block p-3 bg-gray-50 rounded-2xl border border-gray-200 shadow-inner">
-          <img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=https://usielrdz11700.atlassian.net/jira/software/c/form/33fdb779-f156-4510-bdda-6b31fadaec59?atlOrigin=eyJpIjoiMjMyMmVkMWQ1YTMxNDNiNzllZDRkNjE4ZGMxOGM0NzkiLCJwIjoiaiJ9" alt="Código QR de Reportes" class="mx-auto rounded-lg">
+          <img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=https://usielrdz11700.atlassian.net/jira/software/c/form/33fdb779-f156-4510-bdda-6b31fadaec59" alt="QR" class="mx-auto rounded-lg">
         </div>
-        <p class="text-xs text-gray-500 font-medium">Escanea este código QR con tu celular para abrir el formulario de reporte de incidencias en Jira.</p>
-
         <div class="pt-2">
-          <a href="https://usielrdz11700.atlassian.net/jira/software/c/form/33fdb779-f156-4510-bdda-6b31fadaec59?atlOrigin=eyJpIjoiMjMyMmVkMWQ1YTMxNDNiNzllZDRkNjE4ZGMxOGM0NzkiLCJwIjoiaiJ9" target="_blank" class="inline-flex items-center justify-center gap-2 bg-[var(--upslp-orange)] hover:bg-[#ea580c] text-white text-sm font-semibold px-6 py-3 rounded-xl shadow-md transition-all">
-            <i class="fas fa-external-link-alt"></i> Ir al Formulario de Jira directamente
+          <a href="https://usielrdz11700.atlassian.net/jira/software/c/form/33fdb779-f156-4510-bdda-6b31fadaec59" target="_blank" class="inline-flex items-center justify-center gap-2 bg-[var(--upslp-orange)] hover:bg-[#ea580c] text-white text-sm font-semibold px-6 py-3 rounded-xl shadow-md transition-all">
+            <i class="fas fa-external-link-alt"></i> Ir al Formulario
           </a>
         </div>
       </div>
@@ -685,7 +663,7 @@ function renderizarSalaCine() {
     salaCineContainer.innerHTML = `
       <div class="text-center py-8 text-rose-600 text-sm font-semibold">
         <i class="fas fa-ban text-3xl mb-2 block"></i>
-        El centro de cómputo está cerrado los domingos. Por favor selecciona de Lunes a Sábado.
+        El centro de cómputo está cerrado los domingos.
       </div>
     `;
     panelFormReserva.classList.add('hidden');
@@ -698,7 +676,7 @@ function renderizarSalaCine() {
     salaCineContainer.innerHTML = `
       <div class="text-center py-8 text-gray-500 text-sm">
         <i class="fas fa-calendar-alt text-2xl text-[var(--upslp-orange)] mb-2 block"></i>
-        Por favor selecciona primero una <b>Fecha (Lun–Sáb)</b> y un <b>Bloque de hora</b> arriba.
+        Selecciona Fecha y Bloque de hora.
       </div>
     `;
     panelFormReserva.classList.add('hidden');
@@ -712,7 +690,7 @@ function renderizarSalaCine() {
     const swsPC = pcMapaSw[pcId] || [];
 
     const ocupada = reservas.some(r => r.pc === pcId && r.fecha === fecha && r.bloque === bloque);
-    const cubreSoftware = swSeleccionados.every(swReq => swsPC.includes(swReq));
+    const tieneSoftware = swSeleccionados.length === 0 || swSeleccionados.every(swReq => swsPC.includes(swReq));
 
     let estadoClase = 'bg-white border-2 border-gray-300 text-gray-700';
     let tipoEstado = 'disponible';
@@ -720,20 +698,24 @@ function renderizarSalaCine() {
     if (ocupada) {
       estadoClase = 'ocupado';
       tipoEstado = 'ocupado';
-    } else if (!cubreSoftware) {
-      estadoClase = 'no-disponible-sw';
-      tipoEstado = 'no-disponible-sw';
+    } else if (!tieneSoftware && swSeleccionados.length > 0) {
+      estadoClase = 'sin-software';
+      tipoEstado = 'sin-software';
     }
 
     if (pcSeleccionada === pcId) {
       estadoClase = 'selected';
     }
 
+    const iconoSw = swSeleccionados.length > 0 ? (tieneSoftware ? '✅' : '⚠️') : '';
+
     html += `
-      <div class="seat-pc ${estadoClase} rounded-2xl p-3 flex flex-col items-center justify-center text-center shadow-sm" data-pc="${pcId}" data-estado="${tipoEstado}">
+      <div class="seat-pc ${estadoClase} rounded-2xl p-3 flex flex-col items-center justify-center text-center shadow-sm" 
+           data-pc="${pcId}" data-estado="${tipoEstado}" data-tiene-sw="${tieneSoftware}">
         <i class="fas fa-desktop text-lg mb-1"></i>
         <span class="font-bold text-xs font-mono">${pcId}</span>
         <span class="text-[0.6rem] mt-1 line-clamp-1 opacity-75">${swsPC.slice(0, 2).join(', ')}</span>
+        ${iconoSw ? `<span class="text-[0.6rem] mt-0.5">${iconoSw}</span>` : ''}
       </div>
     `;
   }
@@ -744,14 +726,17 @@ function renderizarSalaCine() {
     pcEl.addEventListener('click', () => {
       const estado = pcEl.getAttribute('data-estado');
       const pcId = pcEl.getAttribute('data-pc');
+      const tieneSw = pcEl.getAttribute('data-tiene-sw') === 'true';
 
       if (estado === 'ocupado') {
-        mostrarFeedback('Este equipo ya se encuentra apartado en este horario.', 'error');
+        mostrarFeedback('❌ Este equipo ya está ocupado en este horario.', 'error');
         return;
       }
-      if (estado === 'no-disponible-sw') {
-        mostrarFeedback('Este equipo no cuenta con todo el software requerido que seleccionaste.', 'error');
-        return;
+
+      if (!tieneSw && obtenerSoftwareSeleccionados().length > 0) {
+        if (!confirm(`⚠️ La ${pcId} no tiene todo el software seleccionado.\n¿Aún así quieres usarla?`)) {
+          return;
+        }
       }
 
       pcSeleccionada = pcId;
@@ -767,7 +752,7 @@ function mostrarPanelConfirmacion() {
   confNombreAlumno.textContent = alumnoSesion.nombre || `Alumno ${alumnoSesion.matricula}`;
   confMatriculaAlumno.textContent = alumnoSesion.matricula;
   const sws = obtenerSoftwareSeleccionados();
-  confSoftwareLista.textContent = sws.length > 0 ? sws.join(', ') : 'Ninguno en específico (Solo equipo)';
+  confSoftwareLista.textContent = sws.length > 0 ? sws.join(', ') : 'Ninguno (Solo equipo)';
   panelFormReserva.scrollIntoView({ behavior: 'smooth' });
 }
 
@@ -798,7 +783,7 @@ function cambiarVista(vista) {
 function actualizarTablaAdmin() {
   totalReservasSpan.textContent = reservas.length;
   if (reservas.length === 0) {
-    tablaBody.innerHTML = `<tr><td colspan="7" class="text-center text-gray-400 py-8">No hay reservaciones registradas.</td></tr>`;
+    tablaBody.innerHTML = `<tr><td colspan="7" class="text-center text-gray-400 py-8">No hay reservaciones.</td></tr>`;
     return;
   }
   let html = '';
@@ -812,7 +797,7 @@ function actualizarTablaAdmin() {
         <td class="py-3 px-4 text-xs">${r.fecha}</td>
         <td class="py-3 px-4 text-xs font-semibold text-[var(--upslp-orange)]">${r.bloque}</td>
         <td class="py-3 px-4 text-center">
-          <button onclick="window.eliminarReserva(${r.id})" class="bg-rose-100 hover:bg-rose-200 text-rose-700 p-2 rounded-xl transition-all text-xs" title="Eliminar reserva">
+          <button onclick="window.eliminarReserva(${r.id})" class="bg-rose-100 hover:bg-rose-200 text-rose-700 p-2 rounded-xl transition-all text-xs">
             <i class="fas fa-trash-alt"></i>
           </button>
         </td>
@@ -823,16 +808,16 @@ function actualizarTablaAdmin() {
 }
 
 window.eliminarReserva = async function(id) {
-  if (confirm('¿Estás seguro de eliminar esta reservación?')) {
+  if (confirm('¿Eliminar esta reservación?')) {
     const success = await eliminarReservaPorId(id);
     if (success) {
       reservas = await cargarReservas();
       actualizarTablaAdmin();
       actualizarContadorMisReservas();
       renderizarSalaCine();
-      mostrarFeedback('✅ Reserva eliminada correctamente.', 'exito');
+      mostrarFeedback('✅ Reserva eliminada.', 'exito');
     } else {
-      mostrarFeedback('❌ Error al eliminar la reserva.', 'error');
+      mostrarFeedback('❌ Error al eliminar.', 'error');
     }
   }
 };
@@ -841,7 +826,7 @@ function actualizarTablaMisReservas() {
   if (!alumnoSesion) return;
   const mis = reservas.filter(r => r.matricula === alumnoSesion.matricula);
   if (mis.length === 0) {
-    tablaMisReservasBody.innerHTML = `<tr><td colspan="5" class="text-center text-gray-400 py-8">No tienes reservaciones registradas.</td></tr>`;
+    tablaMisReservasBody.innerHTML = `<tr><td colspan="5" class="text-center text-gray-400 py-8">No tienes reservaciones.</td></tr>`;
     return;
   }
   let html = '';
@@ -854,7 +839,7 @@ function actualizarTablaMisReservas() {
         <td class="py-3 px-4 text-xs font-semibold text-[var(--upslp-orange)]">${r.bloque}</td>
         <td class="py-3 px-4 text-center">
           <button onclick="window.eliminarReserva(${r.id})" class="bg-rose-100 hover:bg-rose-200 text-rose-700 px-3 py-1.5 rounded-xl transition-all text-xs font-semibold">
-            Cancelar Cita
+            Cancelar
           </button>
         </td>
       </tr>
@@ -899,10 +884,10 @@ window.guardarSwPC = async function(pcId) {
   const success = await guardarSoftwarePC(pcId, seleccionados);
   if (success) {
     pcMapaSw[pcId] = seleccionados;
-    mostrarFeedback(`✅ Software actualizado para la ${pcId}`, 'exito');
+    mostrarFeedback(`✅ Software actualizado para ${pcId}`, 'exito');
     renderizarSalaCine();
   } else {
-    mostrarFeedback('❌ Error al guardar el software.', 'error');
+    mostrarFeedback('❌ Error al guardar.', 'error');
   }
 };
 
@@ -915,21 +900,17 @@ btnRolAdmin.addEventListener('click', () => cambiarVista('adminLogin'));
 btnVolverSeleccionEstudiante.addEventListener('click', () => cambiarVista('rol'));
 btnVolverSeleccionAdmin.addEventListener('click', () => cambiarVista('rol'));
 
-// ============================================
-// LOGIN ESTUDIANTE - SOLO MATRÍCULA (CUALQUIER NÚMERO DE 6 DÍGITOS)
-// ============================================
+// Login Estudiante - SOLO MATRÍCULA
 estudianteLoginForm.addEventListener('submit', (e) => {
   e.preventDefault();
   const matricula = estudianteLoginMatricula.value.trim();
 
-  // Validar que sean exactamente 6 dígitos
   if (!/^\d{6}$/.test(matricula)) {
-    estudianteLoginFeedback.textContent = '❌ La matrícula debe tener exactamente 6 dígitos numéricos.';
+    estudianteLoginFeedback.textContent = '❌ La matrícula debe tener 6 dígitos.';
     estudianteLoginFeedback.className = 'mt-4 text-center text-sm font-medium text-rose-600';
     return;
   }
 
-  // Crear sesión sin verificar en base de datos
   alumnoSesion = {
     matricula: matricula,
     nombre: `Alumno ${matricula}`
@@ -944,9 +925,7 @@ estudianteLoginForm.addEventListener('submit', (e) => {
   renderizarSalaCine();
 });
 
-// ============================================
-// LOGIN ADMINISTRADOR
-// ============================================
+// Login Admin
 adminLoginForm.addEventListener('submit', (e) => {
   e.preventDefault();
   const email = adminEmailInput.value.trim();
@@ -960,7 +939,7 @@ adminLoginForm.addEventListener('submit', (e) => {
     actualizarTablaAdmin();
     renderizarAdminGridSw();
   } else {
-    adminLoginFeedback.textContent = '❌ Credenciales incorrectas. Verifica tu correo y contraseña.';
+    adminLoginFeedback.textContent = '❌ Credenciales incorrectas.';
     adminLoginFeedback.className = 'mt-4 text-center text-sm font-medium text-rose-600';
   }
 });
@@ -1000,7 +979,7 @@ btnConfirmarReservaFinal.addEventListener('click', async () => {
   const software = obtenerSoftwareSeleccionados();
 
   if (!pcSeleccionada || !fecha || !bloque) {
-    mostrarFeedback('❌ Faltan datos obligatorios para completar la reserva.', 'error');
+    mostrarFeedback('❌ Faltan datos.', 'error');
     return;
   }
 
@@ -1017,20 +996,21 @@ btnConfirmarReservaFinal.addEventListener('click', async () => {
     await agregarReserva(nuevaReserva);
     reservas = await cargarReservas();
     
-    mostrarFeedback(`✅ ¡Equipo ${pcSeleccionada} reservado con éxito para el ${fecha} (${bloque})!`, 'exito');
+    mostrarFeedback(`✅ ¡${pcSeleccionada} reservada para ${fecha} (${bloque})!`, 'exito');
     panelFormReserva.classList.add('hidden');
     pcSeleccionada = null;
     renderizarSalaCine();
     actualizarContadorMisReservas();
   } catch (error) {
-    mostrarFeedback('❌ Error al guardar la reserva. Intenta nuevamente.', 'error');
+    mostrarFeedback('❌ Error al guardar. Revisa la consola.', 'error');
+    console.error('Error:', error);
   }
 });
 
 btnRefrescarSoftware.addEventListener('click', async () => {
   pcMapaSw = await cargarSoftwarePC();
   renderizarAdminGridSw();
-  mostrarFeedback('✅ Software recargado correctamente.', 'exito');
+  mostrarFeedback('✅ Software recargado.', 'exito');
 });
 
 // ============================================
